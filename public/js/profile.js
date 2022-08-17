@@ -1,132 +1,173 @@
-function myFunction() {
-    var x = document.getElementById("passwordLogin");
-    if (x.type === "password") {
-        x.type = "text";
-    } else {
-        x.type = "password";
+function getAccountDetails(){
+    $(document).ready(function () {
+    var getProfile = new XMLHttpRequest();
+
+    getProfile.open("POST", "http://ec2-44-207-84-110.compute-1.amazonaws:8080/userInfo", true);
+    getProfile.setRequestHeader("Content-Type", "application/json");
+    getProfile.onload = function () {
+        var profile = JSON.parse(getProfile.responseText);
+
+        userID = profile[0]._id
+        firstName = profile[0].firstName;
+        lastName = profile[0].lastName;
+        email = profile[0].email;
+        address = profile[0].address;
+        gender = profile[0].gender;
+        phoneNumber = profile[0].phoneNumber;
+        profilePicture = profile[0].profilePicture;
+        userPassword = profile[0].password;
+        username = profile[0].username;
+        localStorage.setItem("profilePicture", profilePicture);
+        localStorage.setItem("userID", userID);
+
+        if (profilePicture != null && profilePicture != "" && profilePicture != undefined){
+            document.getElementById("profilePicture").src = profilePicture;
+        }
+        /*else if (profilePicture == undefined) {
+            document.getElementById("profilePicture").src = "images/avatar.jpg"
+        }  */
+
+        console.log(profile);
+        
+
+        document.getElementById('firstName').value = firstName;
+        document.getElementById('lastName').value = lastName;
+        document.getElementById('email').value = email;
+        document.getElementById('address').value = address;
+        document.getElementById('gender').value = gender;
+        document.getElementById('phoneNumber').value = phoneNumber;
+       // document.getElementById('profilePicture').src = profilePicture;
+        document.getElementById('password').value = userPassword;
+        document.getElementById('username').value = username;
+
     }
+    var payload = { token: token };
+    getProfile.send(JSON.stringify(payload));
+})}
+
+function putProfilePictureOnNav(){
+    profilePicture = profile[0].profilePicture;
+    document.getElementById("userProfilePic").src =  profilePicture;
+    //localStorage.setItem("profilePicture", profilePicture)
 }
-function registerMe() {
 
-    var registerUser = new XMLHttpRequest();
-
-    registerUser.open("POST", "http://ec2-44-207-84-110.compute-1.amazonaws.com:8080/signup", true)
-    registerUser.setRequestHeader("Content-Type", "application/json")
-    registerUser.onload = function () {
-        $('#registerModal').modal('hide');
-        alert("Successfully signed up!")
-    }
-
-    var username = document.getElementById("username").value;
-    var password = document.getElementById("password").value;
-    var firstName = document.getElementById("firstName").value;
-    var lastName = document.getElementById("lastName").value;
-    var address = document.getElementById("address").value;
-    var email = document.getElementById("email").value;
-    var gender = document.getElementById("gender").value;
-    var phoneNumber = document.getElementById("phoneNumber").value;
-    var confirmPassword = document.getElementById("confirmPassword").value;
-
-    if (firstName == "" || lastName == "" || username == "" || email == "" || password == "" || address == "" || gender == "" || phoneNumber == "" || confirmPassword == "") {
-        alert("Ensure all fields are filled up!")
-        return;
-    }
-
-    if (username.length > 10) {
-        alert("Your username cannot be more than 15 characters! ");
-        return;
-    }
-
-    if (password.length > 1 && password.length < 8) {
-        alert("Your password cannot be less than 8 characters! ");
-        return;
-    }
-
-    if (password != confirmPassword) {
-        alert("Passwords do not match! ");
-        return;
-    }
-
-    var payload = { username: username, firstName: firstName, lastName: lastName, email: email, password: password, address: address, gender: gender, phoneNumber: phoneNumber }
-    console.log(JSON.stringify(payload))
-    registerUser.send(JSON.stringify(payload));
-
-
-    // use web api to check username in database
-    /*var checkUsername = new XMLHttpRequest();
-    checkUsername.open("GET", `/signup/${username}`, true)
-    checkUsername.setRequestHeader("Content-Type", "application/json")
-    checkUsername.onload = function () {
-        var response = JSON.parse(checkUsername.responseText)
-        // if username does not exist, it creates a new user account
-        if (response.message == "Unique username") {
-            var registerUser = new XMLHttpRequest();
-            registerUser.open("POST", "http://ec2-44-207-84-110.compute-1.amazonaws.com:8080/signup", true)
-            registerUser.setRequestHeader("Content-Type", "application/json")
-            registerUser.onload = function () {
-                $('#registerModal').modal('hide');
-                alert("Successfully signed up!")
+function deleteAccount() {
+    deleteAccountPassword = document.getElementById("deleteAccPassword").value;
+    if (deleteAccountPassword == userPassword) {
+        var response = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+        if (response == true) {
+            var deleteAccount = new XMLHttpRequest();
+            username = localStorage.getItem("username")
+            deleteAccount.open("DELETE", `/user/${username}`, true)
+            deleteAccount.setRequestHeader("Content-Type", "application/json")
+            deleteAccount.onload = function () {
+                alert("Your account has been deleted.");
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = "index.html";
             }
-            var payload = {username: username, firstName: firstName, lastName: lastName, email: email, password: password, address: address, gender: gender, phoneNumber: phoneNumber}
-            console.log(JSON.stringify(payload))
-            registerUser.send(JSON.stringify(payload));
-        }
-        // if username does exist, user will be prompted to key in username again
-        else {
-            alert(response.message);
-        }
-    }
-    checkUsername.send()   */
-}
-
-function loginMe() {
-    var loginUser = new XMLHttpRequest();
-
-    loginUser.open("POST", "http://ec2-44-207-84-110.compute-1.amazonaws.com:8080/login", true)
-    loginUser.setRequestHeader("Content-Type", "application/json")
-    loginUser.onload = function () {
-        var token = JSON.parse(loginUser.responseText);
-        console.log(token.result);
-        if (token.result != "Invalid") {
-            localStorage.setItem("username", token.username)
-            $('#loginModal').modal('hide');
-            alert("Successfully logged in! Welcome, " + localStorage.getItem("username") + "!")
-            document.getElementById("loginMenu").style.display = "none";
-            document.getElementById("registerMenu").style.display = "none";
-            document.getElementById("profileUsername").style.display = "block";
-            document.getElementById("profileDropdown").textContent = token.username
-            sessionStorage.setItem("token", token.result)
-            // putProfilePictureOnNav();
-            //profilePic = localStorage.getItem("profilePicture")
-            //document.getElementById("userProfilePic").src =  profilePic;
-            window.location.reload();
-        }
-        else {
-            alert("Wrong credentials entered!")
-        }
-    }
-    var username = document.getElementById("usernameLogin").value;
-    var password = document.getElementById("passwordLogin").value;
-    var payload = { username: username, password: password }
-    loginUser.send(JSON.stringify(payload));
-}
-
-function logoutMe() {
-    var logOut = window.confirm("Are you sure you want to log out?")
-    if (logOut) {
-        $('#registerMenu').show();
-        $('#loginMenu').show();
-        $('#profileUsername').hide();
-        sessionStorage.removeItem("token")
-        localStorage.clear();
-        if (window.location = "profile.html" || window.location == "restaurant.html") {
-            window.location.href = "index.html";
+            deleteAccount.send();
         }
     }
     else {
-        null
+        alert("Your password is incorrect!")
     }
-
-
 }
+function encode() {
+    var selectedfile = document.getElementById("myinput").files;
+    if (selectedfile.length > 0) {
+        var imageFile = selectedfile[0];
+        var fileReader = new FileReader();
+        fileReader.onload = function (fileLoadedEvent) {
+            profilePicture = fileLoadedEvent.target.result;
+            document.getElementById("profilePicture").src = profilePicture;
+        }
+        fileReader.readAsDataURL(imageFile);
+    }
+}
+
+const dropImage = document.querySelector("#dropImage");
+dropImage.addEventListener('dragover', (event)=> {
+    event.stopPropagation();
+    event.preventDefault();
+});
+dropImage.addEventListener('drop', (event)=> {
+    event.stopPropagation();
+    event.preventDefault();
+    const fileList = event.dataTransfer.files;
+    readImage(fileList[0]);
+});
+readImage = (file) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', (event) =>{
+        picture = event.target.result;
+        console.log(picture);
+        document.getElementById('profilePicture').src = picture;
+    });
+    reader.readAsDataURL(file);
+}
+
+function update() {
+    var updateUser = new XMLHttpRequest();
+
+    firstName = document.getElementById("firstName").value;
+    lastName = document.getElementById("lastName").value;
+    email = document.getElementById("email").value;
+    password = document.getElementById("password").value;
+    address = document.getElementById("address").value;
+    gender = document.getElementById("gender").value;
+    phoneNumber = document.getElementById("phoneNumber").value;
+    profilePicture = document.getElementById("profilePicture").src;
+    console.log(profilePicture)
+
+    updateUser.open("PUT", "http://ec2-44-207-84-110.compute-1.amazonaws:8080/user", true)
+    updateUser.setRequestHeader("Content-Type", "application/json")
+    updateUser.onload = function () {
+        localStorage.setItem("profilePicture", profilePicture)
+        location.reload();
+        document.getElementById("userProfilePic").src =  profilePicture;
+        alert("Your credentials has been updated!")
+    }
+    var payload = { firstName: firstName, lastName: lastName, email: email, password: password, address: address, gender: gender, phoneNumber: phoneNumber, profilePicture: profilePicture, token: token }
+    updateUser.send(JSON.stringify(payload));
+} 
+
+function updatePassword() {
+    currentPassword = document.getElementById("currentPassword").value;
+    newPassword = document.getElementById("newPassword").value;
+    confirmNewPassword = document.getElementById("confirmNewPassword").value;
+
+    if (currentPassword != 'null' && newPassword != "null" && confirmNewPassword != "null" && currentPassword != "" && newPassword != "" && confirmNewPassword != "") {
+        if (currentPassword == userPassword) {
+            if (newPassword.length >= 8) {
+                if (newPassword == confirmNewPassword) {
+                    response = confirm("Are you sure you want to change your password?")
+                    if (response == false) {
+                        return
+                    }
+                    var updatePassword = new XMLHttpRequest();
+
+                    updatePassword.open("PUT", "http://ec2-44-207-84-110.compute-1.amazonaws:8080/user/password", true)
+                    updatePassword.setRequestHeader("Content-Type", "application/json")
+                    updatePassword.onload = function () {
+                        alert("Your credentials has been updated!")
+                        location.reload()
+                    }
+                    password = document.getElementById("newPassword").value;
+                    var payload = { password: password, token: token }
+                    updatePassword.send(JSON.stringify(payload))
+
+                } else {
+                    alert("New Passwords do not match!")
+                }
+            } else {
+                alert("New password must contain at least 8 characters!")
+            }
+        } else {
+            alert("Current password entered is incorrect!")
+        }
+    } else {
+        alert("Please fill in all the fields!")
+    }
+} 
 
